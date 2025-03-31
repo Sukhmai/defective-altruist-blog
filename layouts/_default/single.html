@@ -1,0 +1,21 @@
+{{ define "main" }}
+<link rel="stylesheet" href="/css/post.css">
+<main>
+  <article>
+    <h1>{{ .Title }}</h1>
+    <div class="post-meta">
+      {{ if .Date }}
+      <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+        {{ .Date.Format "January 2, 2006" }}
+      </time>
+      {{ end }}
+    </div>
+    <div class="post-content">
+      {{ .Content }}
+    </div>
+    <div class="post-footer">
+      <a href="/" class="back-to-home">← Back to home</a>
+    </div>
+  </article>
+</main>
+{{ end }}

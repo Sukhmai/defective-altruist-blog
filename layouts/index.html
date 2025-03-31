@@ -380,6 +380,58 @@
             text-decoration-thickness: 1px;
         }
 
+        .post-list {
+            margin-top: 3rem;
+        }
+
+        .post-content {
+            margin-bottom: 5rem;
+            padding-bottom: 3rem;
+            border-bottom: 1px dotted var(--main);
+            scroll-margin-top: 2rem;
+        }
+
+        .post-content:last-child {
+            border-bottom: none;
+        }
+
+        .post-content h2 {
+            margin: 1rem 0;
+            text-align: left;
+            font-size: 1.8em;
+        }
+
+        .post-meta {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .post-body {
+            line-height: 1.7;
+        }
+
+        .post-body h2 {
+            font-size: 1.4em;
+            margin: 2.5rem 0 1rem;
+            text-align: left;
+        }
+
+        .post-body h3 {
+            font-size: 1.2em;
+            margin: 2rem 0 1rem;
+            text-align: left;
+        }
+
+        .post-body ul, .post-body ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+
+        .post-body li {
+            margin: 0.5rem 0;
+        }
+
         @media screen and (max-width: 900px){
             .portfolio{
                 width: 100%;
@@ -481,6 +533,14 @@
             border: none;
         }
 
+        .post-filter {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-weight: 200;
+            border: none;
+        }
+
     </style>
 </head>
 
@@ -488,24 +548,40 @@
   <div class="rain front-row"></div>
   <div class="rain back-row"></div>
     <main>
-        <h1> webcraft</h1>
-        <div class=subtitle> by <a href="https://joodaloop.com"> Judah </a></div>
+        <h1> Defective Altruism</h1>
 
         <div class="container" id=container>
         </div>
 
-        <button class=mode onclick="switchColors()"> dark/light </button>
+        <button class="mode" onclick="switchColors()"> dark/light </button>
+        <button class="post-filter" onclick="togglePostFilter()">all</button>
 
 
         <div class=toc>
-            <a href="#the-product" id="toc-the-product">Product</a>
-            <a href="#the-portfolio" id="toc-the-portfolio">Portfolio</a>
-            <a href="#the-process" id="toc-the-process"> Process</a>
-            <!-- <a href="#the-price" id="toc-the-price"> Price</a> -->
-            <a href="#postscript" id="toc-postscript"> Postscript</a>
+            {{ range where .Site.RegularPages "Section" "" }}
+            <a href="#{{ .File.BaseFileName }}" id="toc-{{ .File.BaseFileName }}">{{ .Title }}</a>
+            {{ end }}
         </div>
 
         {{ .Content }}
+
+        <div class="post-list">
+            {{ range where .Site.RegularPages "Section" "" }}
+            <div class="post-content" id="{{ .File.BaseFileName }}" data-type="{{ .Params.type }}">
+                <h2>{{ .Title }}</h2>
+                <div class="post-meta">
+                    {{ if .Date }}
+                    <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+                        {{ .Date.Format "January 2, 2006" }}
+                    </time>
+                    {{ end }}
+                </div>
+                <div class="post-body">
+                    {{ .Content }}
+                </div>
+            </div>
+            {{ end }}
+        </div>
 
         
 
@@ -550,6 +626,42 @@
             root.style.setProperty('--second', mainColor);
         }
 
+        // Post filter functionality
+        let currentFilter = 'all'; // Default to showing both types of posts
+
+        function togglePostFilter() {
+            const filterButton = document.querySelector('.post-filter');
+            const posts = document.querySelectorAll('.post-content');
+            const tocLinks = document.querySelectorAll('.toc a');
+            
+            // Cycle through filter options: both -> main -> thought -> both
+            if (currentFilter === 'all') {
+                currentFilter = 'posts';
+            } else if (currentFilter === 'posts') {
+                currentFilter = 'thoughts';
+            } else {
+                currentFilter = 'all';
+            }
+            
+            // Update button text
+            filterButton.textContent = currentFilter;
+            
+            // Show/hide posts based on filter
+            posts.forEach(post => {
+                const postType = post.getAttribute('data-type') || '';
+                const postId = post.id;
+                const tocLink = document.getElementById('toc-' + postId);
+                
+                if (currentFilter === 'all' || postType === currentFilter) {
+                    post.style.display = 'block';
+                    if (tocLink) tocLink.style.display = 'block';
+                } else {
+                    post.style.display = 'none';
+                    if (tocLink) tocLink.style.display = 'none';
+                }
+            });
+        }
+
 
 
         let prevID = "the-problem"
@@ -582,19 +694,39 @@
         const currentId = getCurrentHeadingId();
 
         document.addEventListener("scroll", () => {
-
-            const headings = Array.from(document.getElementsByTagName('h2'));
-            let current = getCurrentHeadingId() ?? prevID
-            prevID = current
-
+            // Get all post content sections
+            const postSections = Array.from(document.querySelectorAll('.post-content'));
             
-            for(let ele of headings){
-                document.getElementById("toc-" + ele.id).style.fontWeight = "200"
+            // Find which section is currently in view
+            let currentSection = null;
+            
+            for (const section of postSections) {
+                const rect = section.getBoundingClientRect();
+                // If the top of the section is in the viewport or just above it
+                if (rect.top <= 100 && rect.bottom > 0) {
+                    currentSection = section.id;
+                    break;
+                }
             }
-
-                document.getElementById("toc-" + current).style.fontWeight = "800"
             
-        })
+            // If no section is found, use the previous one
+            currentSection = currentSection ?? prevID;
+            prevID = currentSection;
+            
+            // Reset all TOC links to normal weight
+            const tocLinks = document.querySelectorAll('.toc a');
+            tocLinks.forEach(link => {
+                link.style.fontWeight = "200";
+            });
+            
+            // Highlight the current section in the TOC
+            if (currentSection) {
+                const currentTocLink = document.getElementById("toc-" + currentSection);
+                if (currentTocLink) {
+                    currentTocLink.style.fontWeight = "800";
+                }
+            }
+        });
 
 
 
