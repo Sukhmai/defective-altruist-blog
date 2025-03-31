@@ -1,5 +1,5 @@
 ---
-title: "Defective Altruism"
+title: "Defective Altruist"
 description: "Pessimism of the intellect, optimism of the will."
 ---
 
