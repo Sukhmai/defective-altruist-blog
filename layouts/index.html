@@ -554,7 +554,7 @@
         </div>
 
         <button class="mode" onclick="switchColors()"> dark/light </button>
-        <button class="post-filter" onclick="togglePostFilter()">all</button>
+        <button class="post-filter" onclick="togglePostFilter()">posts</button>
 
 
         <div class=toc>
@@ -604,20 +604,20 @@
         }
 
         // Post filter functionality
-        let currentFilter = 'all'; // Default to showing both types of posts
+        let currentFilter = 'posts'; // Default to showing posts
 
         function togglePostFilter() {
             const filterButton = document.querySelector('.post-filter');
             const posts = document.querySelectorAll('.post-content');
             const tocLinks = document.querySelectorAll('.toc a');
             
-            // Cycle through filter options: both -> main -> thought -> both
-            if (currentFilter === 'all') {
-                currentFilter = 'posts';
-            } else if (currentFilter === 'posts') {
+            // Cycle through filter options: posts -> thoughts -> all -> posts
+            if (currentFilter === 'posts') {
                 currentFilter = 'thoughts';
-            } else {
+            } else if (currentFilter === 'thoughts') {
                 currentFilter = 'all';
+            } else {
+                currentFilter = 'posts';
             }
             
             // Update button text
@@ -669,6 +669,27 @@
 
         // Call the function and retrieve the current heading ID
         const currentId = getCurrentHeadingId();
+        
+        // Apply the initial filter when the page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            // Apply the initial filter (posts)
+            const posts = document.querySelectorAll('.post-content');
+            const tocLinks = document.querySelectorAll('.toc a');
+            
+            posts.forEach(post => {
+                const postType = post.getAttribute('data-type') || '';
+                const postId = post.id;
+                const tocLink = document.getElementById('toc-' + postId);
+                
+                if (currentFilter === 'all' || postType === currentFilter) {
+                    post.style.display = 'block';
+                    if (tocLink) tocLink.style.display = 'block';
+                } else {
+                    post.style.display = 'none';
+                    if (tocLink) tocLink.style.display = 'none';
+                }
+            });
+        });
 
         document.addEventListener("scroll", () => {
             // Get all post content sections
